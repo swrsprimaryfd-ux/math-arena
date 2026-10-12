@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Math Arena - ศึกคณิตศาสตร์</title>
+<style>
+:root{--bg:#f6f4ff;--card:#fff;--text:#1d1b2e;--mute:#6b6880;--pri:#5b3df5;--ok:#12a150;--bad:#e5384f;--line:#e2defa;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141222;--card:#1f1c33;--text:#f1eeff;--mute:#a29fc0;--pri:#8b74ff;--line:#34305a}}
+:root[data-theme="dark"]{--bg:#141222;--card:#1f1c33;--text:#f1eeff;--mute:#a29fc0;--pri:#8b74ff;--line:#34305a}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:26px;margin:8px 0 4px}
+p.sub{color:var(--mute);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 18px;background:var(--pri);color:#fff;font-weight:600}
+button.ghost{background:transparent;color:var(--pri);border:1px solid var(--line)}
+input{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hide{display:none}
+.hud{display:flex;justify-content:space-between;gap:8px}
+.hud div{flex:1;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+.hud b{display:block;font-size:22px}
+.hud span{font-size:12px;color:var(--mute)}
+.q{font-size:44px;font-weight:700;text-align:center;margin:20px 0;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri);width:100%;transition:width .2s linear}
+#ans{font-size:28px;text-align:center}
+.fb{min-height:28px;text-align:center;font-weight:600;margin-top:8px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-size:13px}
+.rule li{margin:4px 0;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="setup">
+  <h1>🧮 Math Arena</h1>
+  <p class="sub">ศึกคณิตศาสตร์ผลัดกันเล่น ใครคะแนนสูงสุดชนะ</p>
+  <div class="card">
+    <label>จำนวนผู้เล่น</label>
+    <div class="row" id="pcount" style="margin:8px 0 12px"></div>
+    <div id="names"></div>
+    <label>เวลาต่อรอบ</label>
+    <div class="row" id="tsel" style="margin:8px 0 12px"></div>
+    <button id="start" style="width:100%">เริ่มเกม</button>
+  </div>
+  <div class="card">
+    <b>กติกาคะแนน</b>
+    <ul class="rule">
+      <li>ตอบถูก: คะแนนพื้นฐาน = 10 × เลเวล</li>
+      <li>โบนัสความเร็ว: ตอบภายใน 3 วินาที +5</li>
+      <li>คอมโบ: ถูกติดกัน x2 (3 ข้อ), x3 (6 ข้อ), x4 (10 ข้อ)</li>
+      <li>ตอบผิด: -5 และคอมโบรีเซ็ต</li>
+      <li>ถูกครบทุก 5 ข้อ เลเวลเพิ่ม โจทย์ยากขึ้น (สูงสุด 6)</li>
+    </ul>
+  </div>
+  <div class="card" id="lbcard"></div>
+</section>
+
+<section id="game" class="hide">
+  <div class="hud">
+    <div><b id="hPlayer">-</b><span>ผู้เล่น</span></div>
+    <div><b id="hScore">0</b><span>คะแนน</span></div>
+    <div><b id="hLevel">1</b><span>เลเวล</span></div>
+    <div><b id="hCombo">x1</b><span>คอมโบ</span></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="bar"><i id="tbar"></i></div>
+    <div class="q" id="qtext">-</div>
+    <input id="ans" type="number" inputmode="numeric" autocomplete="off" placeholder="คำตอบ">
+    <div class="fb" id="fb"></div>
+    <button id="submit" style="width:100%;margin-top:8px">ส่งคำตอบ (Enter)</button>
+  </div>
+</section>
+
+<section id="between" class="hide">
+  <div class="card" style="text-align:center">
+    <h1 id="bTitle">-</h1>
+    <p class="sub" id="bSub"></p>
+    <button id="bGo">พร้อมแล้ว เริ่มเลย</button>
+  </div>
+</section>
+
+<section id="result" class="hide">
+  <h1>🏆 สรุปผล</h1>
+  <div class="card"><table id="rtable"></table></div>
+  <div class="row"><button id="again">เล่นอีกครั้ง</button><button class="ghost" id="home">กลับหน้าแรก</button></div>
+</section>
+
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+let nPlayers=2, roundSec=60, players=[], cur=0, st=null, timer=null, qStart=0, ans=0;
+
+function show(id){["setup","game","between","result"].forEach(s=>$(s).classList.toggle("hide",s!==id))}
+function seg(el,vals,get,set,fmt){
+  el.innerHTML="";
+  vals.forEach(v=>{const b=document.createElement("button");b.textContent=fmt(v);b.className=get()===v?"":"ghost";
+    b.onclick=()=>{set(v);seg(el,vals,get,set,fmt)};el.appendChild(b)});
+}
+function renderNames(){
+  const old=[...document.querySelectorAll("#names input")].map(i=>i.value);
+  $("names").innerHTML="";
+  for(let i=0;i<nPlayers;i++){
+    const inp=document.createElement("input");inp.placeholder="ชื่อผู้เล่น "+(i+1);inp.value=old[i]||"";inp.style.marginBottom="8px";
+    $("names").appendChild(inp);
+  }
+}
+function drawSetup(){
+  seg($("pcount"),[1,2,3,4],()=>nPlayers,v=>{nPlayers=v;renderNames()},v=>v+" คน");
+  seg($("tsel"),[30,60,90],()=>roundSec,v=>roundSec=v,v=>v+" วิ");
+  renderNames();drawLB();
+}
+
+// ----- question generator by level -----
+function makeQ(level){
+  let t,a;
+  switch(level){
+    case 1:{const x=rnd(2,20),y=rnd(2,20);if(Math.random()<.5){t=`${x} + ${y}`;a=x+y}else{const m=Math.max(x,y),n=Math.min(x,y);t=`${m} − ${n}`;a=m-n}break}
+    case 2:{const x=rnd(10,99),y=rnd(10,99);if(Math.random()<.5){t=`${x} + ${y}`;a=x+y}else{const m=Math.max(x,y),n=Math.min(x,y);t=`${m} − ${n}`;a=m-n}break}
+    case 3:{const x=rnd(3,12),y=rnd(3,12);if(Math.random()<.6){t=`${x} × ${y}`;a=x*y}else{t=`${x*y} ÷ ${x}`;a=y}break}
+    case 4:{const x=rnd(11,25),y=rnd(3,9);if(Math.random()<.5){t=`${x} × ${y}`;a=x*y}else{const z=rnd(3,15);t=`${x} + ${y} × ${z}`;a=x+y*z}break}
+    case 5:{const x=rnd(2,9),y=rnd(2,9),z=rnd(2,9),w=rnd(5,30);const r=rnd(0,2);
+      if(r===0){t=`(${x} + ${y}) × ${z} − ${w}`;a=(x+y)*z-w}
+      else if(r===1){const s=rnd(11,19);t=`${s}²`;a=s*s}
+      else{t=`${x*z} ÷ ${z} + ${y} × ${w}`;a=x+y*w}break}
+    default:{const r=rnd(0,2);
+      if(r===0){const x=rnd(12,30),y=rnd(12,30);t=`${x} × ${y}`;a=x*y}
+      else if(r===1){const x=rnd(3,9),y=rnd(3,9),z=rnd(3,9),w=rnd(10,60);t=`(${x} × ${y} + ${z}) × 2 − ${w}`;a=(x*y+z)*2-w}
+      else{const b=rnd(2,6),c=rnd(2,5);t=`${b}${["","","²","³","⁴"][c]===""?"²":["","","²","³","⁴"][c]} + ${rnd(10,50)}`;
+        const e=c<2?2:c;t=`${b}${["","","²","³","⁴"][e]} + `+(()=>{const k=rnd(10,50);a=Math.pow(b,e)+k;return k})()}
+    }
+  }
+  return {t,a};
+}
+
+// ----- game flow -----
+function startGame(){
+  const ins=[...document.querySelectorAll("#names input")];
+  players=ins.map((i,k)=>({name:i.value.trim()||"ผู้เล่น "+(k+1),score:0,correct:0,wrong:0,best:0,level:1}));
+  cur=0;intro();
+}
+function intro(){
+  $("bTitle").textContent="ตา: "+players[cur].name;
+  $("bSub").textContent=`เวลา ${roundSec} วินาที — ยิ่งตอบเร็วและถูกติดกัน ยิ่งได้คะแนนมาก`;
+  show("between");
+}
+function startTurn(){
+  st={score:0,level:1,streak:0,streakBest:0,right:0,wrong:0,levelRight:0,t:roundSec};
+  $("hPlayer").textContent=players[cur].name;
+  show("game");updateHud();nextQ();
+  $("tbar").style.width="100%";
+  clearInterval(timer);
+  timer=setInterval(()=>{st.t--;$("tbar").style.width=(st.t/roundSec*100)+"%";if(st.t<=0){clearInterval(timer);endTurn()}},1000);
+}
+function mult(s){return s>=10?4:s>=6?3:s>=3?2:1}
+function updateHud(){
+  $("hScore").textContent=st.score;$("hLevel").textContent=st.level;$("hCombo").textContent="x"+mult(st.streak);
+}
+function nextQ(){
+  const q=makeQ(st.level);ans=q.a;$("qtext").textContent=q.t+" = ?";
+  $("ans").value="";$("ans").focus();qStart=Date.now();
+}
+function submit(){
+  if(!st||st.t<=0)return;
+  const v=$("ans").value;if(v==="")return;
+  const fb=$("fb");
+  if(Number(v)===ans){
+    const fast=(Date.now()-qStart)<=3000;
+    const m=mult(st.streak);
+    const gain=(10*st.level+(fast?5:0))*m;
+    st.score+=gain;st.right++;st.streak++;st.levelRight++;
+    st.streakBest=Math.max(st.streakBest,st.streak);
+    fb.className="fb ok";fb.textContent=`✓ +${gain}${fast?" ⚡":""}`;
+    if(st.levelRight>=5&&st.level<6){st.level++;st.levelRight=0;fb.textContent+=" • เลเวลอัพ!"}
+  }else{
+    st.score=Math.max(0,st.score-5);st.wrong++;st.streak=0;
+    fb.className="fb bad";fb.textContent=`✗ เฉลย ${ans} (-5)`;
+  }
+  updateHud();nextQ();
+}
+function endTurn(){
+  const p=players[cur];
+  p.score=st.score;p.correct=st.right;p.wrong=st.wrong;p.best=st.streakBest;p.level=st.level;
+  st=null;cur++;
+  if(cur<players.length)intro();else finish();
+}
+
+// ----- leaderboard (per-viewer, guarded) -----
+function loadLB(){try{return JSON.parse(localStorage.getItem("mathArenaLB")||"[]")}catch(e){return []}}
+function saveLB(list){try{localStorage.setItem("mathArenaLB",JSON.stringify(list))}catch(e){}}
+function drawLB(){
+  const lb=loadLB();
+  $("lbcard").innerHTML="<b>🥇 อันดับสูงสุดในเครื่องนี้</b>"+(lb.length?
+    "<table>"+lb.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${r.score}</td></tr>`).join("")+"</table>":
+    '<p class="sub">ยังไม่มีสถิติ ลองเล่นดูสิ</p>');
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function finish(){
+  const sorted=[...players].sort((a,b)=>b.score-a.score);
+  const top=sorted[0].score;
+  $("rtable").innerHTML="<tr><th>#</th><th>ชื่อ</th><th>คะแนน</th><th>ถูก/ผิด</th><th>คอมโบสูงสุด</th><th>เลเวล</th></tr>"+
+    sorted.map((p,i)=>`<tr><td>${["🥇","🥈","🥉"][i]||i+1}</td><td>${esc(p.name)}${p.score===top&&sorted.filter(x=>x.score===top).length>1?" (เสมอ)":""}</td><td><b>${p.score}</b></td><td>${p.correct}/${p.wrong}</td><td>${p.best}</td><td>${p.level}</td></tr>`).join("");
+  const lb=loadLB().concat(players.map(p=>({name:p.name,score:p.score}))).sort((a,b)=>b.score-a.score).slice(0,10);
+  saveLB(lb);show("result");
+}
+
+$("start").onclick=startGame;
+$("bGo").onclick=startTurn;
+$("submit").onclick=submit;
+$("ans").addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+$("again").onclick=()=>{cur=0;players.forEach(p=>p.score=0);startGame()};
+$("home").onclick=()=>{drawSetup();show("setup")};
+drawSetup();
+</script>
+</body>
+</html>
